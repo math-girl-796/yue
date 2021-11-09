@@ -7,29 +7,44 @@ import tkinter
 import random
 import logging
 
-mixer = pygame.mixer
-music = pygame.mixer.music
-
-mixer.init()
-
+NUM_MIXER_CHANNEL = 10
+current_mixer_channel = 0
 VOICE_BANK = None
 
+mixer = pygame.mixer
+mixer.init()
+mixer.set_num_channels(NUM_MIXER_CHANNEL)
+music = pygame.mixer.music
+
+
 def on_press(key):
+    global current_mixer_channel
     try:
-        if VOICE_BANK.startswith("yue"):
+        if key is None:
+            print("unknown key")
+        elif VOICE_BANK.startswith("yue"):
             yue_list = os.listdir(os.path.join("voice_bank", VOICE_BANK))
             path = os.path.join("voice_bank", VOICE_BANK, random.choice(yue_list))
-        else:
+        elif hasattr(key, "char"):
             keychar = key.char
             path = os.path.join("voice_bank", VOICE_BANK, keychar + ".mp3")
+        else:
+            keystring = str(key).split(".")[-1]
+            path = os.path.join("voice_bank", VOICE_BANK, keystring + ".mp3")
         # logging.debug("play:", path)
-        music.load(path)
-        music.play()
+        # music.load(path)
+        # music.play()
+        if not os.path.exists(path):
+            path = path[:-4] + ".wav"
+        print(path)
+        mixer.Channel(current_mixer_channel).play(mixer.Sound(path))
+        current_mixer_channel = (current_mixer_channel + 1) % NUM_MIXER_CHANNEL
+        # time.sleep(5)
     except AttributeError:
-        # logging.debug('special key {0} pressed'.format(key))
+        print('special key {0} pressed'.format(key))
         pass
     except Exception as e:
-        # logging.debug(e)
+        print(e)
         pass
 
 def on_release(key):
